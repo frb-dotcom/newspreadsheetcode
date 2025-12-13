@@ -1,0 +1,149 @@
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+
+const CLASS_THEME = {
+  A: "border-red-600 shadow-red-600/50 text-red-400",
+  B: "border-orange-500 shadow-orange-500/50 text-orange-400",
+  C: "border-yellow-500 shadow-yellow-500/50 text-yellow-300",
+  D: "border-green-500 shadow-green-500/50 text-green-400",
+};
+
+const WAGE_BUDGET = 2_000_000;
+
+const players = [
+  { username: "B_mzi", club: "Bayern Munich", position: "CAM", class: "A", ovr: 85, wage: 252000 },
+  { username: "B_mzi", club: "Bayern Munich", position: "ST", class: "A", ovr: 86, wage: 258000 },
+  { username: "B_mzi", club: "Bayern Munich", position: "CDM", class: "C", ovr: 79, wage: 217000 },
+  // Add more players as needed
+];
+
+async function fetchRobloxAvatar(username) {
+  try {
+    const userRes = await fetch(`https://users.roblox.com/v1/users/search?keyword=${username}&limit=1`);
+    const userData = await userRes.json();
+    if (!userData.data?.length) return null;
+
+    const userId = userData.data[0].id;
+    const thumbRes = await fetch(
+      `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`
+    );
+    const thumbData = await thumbRes.json();
+    return thumbData.data[0]?.imageUrl || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+export default function App() {
+  const [avatars, setAvatars] = useState({});
+  const [clubFilter, setClubFilter] = useState("");
+  const [positionFilter, setPositionFilter] = useState("");
+  const [sortKey, setSortKey] = useState("ovr");
+
+  useEffect(() => {
+    players.forEach(async (p) => {
+      if (!avatars[p.username]) {
+        const url = await fetchRobloxAvatar(p.username);
+        setAvatars((a) => ({ ...a, [p.username]: url }));
+      }
+    });
+  }, [avatars]);
+
+  let visiblePlayers = players.filter((p) => {
+    if (clubFilter && p.club !== clubFilter) return false;
+    if (positionFilter && p.position !== positionFilter) return false;
+    return true;
+  });
+
+  visiblePlayers = [...visiblePlayers].sort((a, b) => b[sortKey] - a[sortKey]);
+
+  const clubWageUsed = visiblePlayers.reduce((s, p) => s + p.wage, 0);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-neutral-950 to-black text-white p-8">
+      <header className="flex flex-col md:flex-row justify-between items-center mb-8">
+        <h1 className="text-4xl font-extrabold text-red-500 tracking-wide">IFF SPREADSHEET</h1>
+        <div className="flex gap-2 mt-4 md:mt-0">
+          <button
+            className="px-4 py-2 rounded bg-red-600 hover:bg-red-700"
+            onClick={() => { setClubFilter(""); setPositionFilter(""); }}
+          >
+            Clear Filters
+          </button>
+        </div>
+      </header>
+
+      <div className="flex gap-3 mb-4">
+        <button
+          className="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700"
+          onClick={() => setSortKey("ovr")}
+        >
+          Sort by OVR
+        </button>
+        <button
+          className="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700"
+          onClick={() => setSortKey("wage")}
+        >
+          Sort by Wage
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {visiblePlayers.map((p) => (
+          <motion.div
+            key={p.username}
+            whileHover={{ scale: 1.03 }}
+            className={`rounded-2xl border-2 bg-neutral-900 p-4 shadow-lg ${CLASS_THEME[p.class]}`}
+          >
+            <div className="flex gap-4">
+              <div className={`rounded-full border-4 ${CLASS_THEME[p.class]}`}>
+                {avatars[p.username] ? (
+                  <img src={avatars[p.username]} className="w-20 h-20 rounded-full" />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-neutral-700" />
+                )}
+              </div>
+
+              <div className="flex-1">
+                <div className="text-lg font-semibold">{p.username}</div>
+                <div className="text-3xl font-black">{p.ovr} OVR</div>
+                <div className="mt-2 text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span>Position</span>
+                    <button className="underline" onClick={() => setPositionFilter(p.position)}>
+                      {p.position}
+                    </button>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Club</span>
+                    <button className="underline" onClick={() => setClubFilter(p.club)}>
+                      {p.club}
+                    </button>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Wage</span>
+                    <span>${p.wage.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {(clubFilter || positionFilter) && (
+        <div className="mt-8 text-center">
+          <div className="text-sm text-neutral-400 mb-2">
+            Wage Used: ${clubWageUsed.toLocaleString()} / ${WAGE_BUDGET.toLocaleString()}
+          </div>
+          <div className="h-3 w-full bg-neutral-800 rounded">
+            <div
+              className="h-3 bg-red-600 rounded"
+              style={{ width: `${Math.min((clubWageUsed / WAGE_BUDGET) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
