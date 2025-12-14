@@ -69,25 +69,27 @@ export default function App() {
   const [playerPopup, setPlayerPopup] = useState(null);
 
   useEffect(() => {
-    players.forEach(async (p) => {
-      if (!avatars[p.username]) {
-        const url = await fetchRobloxAvatar(p.username);
-        setAvatars((a) => ({ ...a, [p.username]: url }));
+    (async () => {
+      for (const p of players) {
+        if (!avatars[p.username]) {
+          const url = await fetchRobloxAvatar(p.username);
+          setAvatars((a) => ({ ...a, [p.username]: url }));
+        }
       }
-    });
-  }, []);
+    })();
+  }, [avatars]);
 
   const rankedPlayers = [...players].sort((a, b) => b.ovr - a.ovr);
 
-  function openClub(club) {
+  const openClub = (club) => {
     setPlayerPopup(null);
     setClubModal(club);
-  }
+  };
 
-  function openPosition(position) {
+  const openPosition = (position) => {
     setPlayerPopup(null);
     setPositionModal(position);
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-950 to-black text-white p-10 font-[Inter]">
@@ -104,7 +106,6 @@ export default function App() {
           >
             <div className="flex gap-5">
               <img src={avatars[p.username] || FALLBACK_AVATAR} className="w-20 h-20 rounded-full border-4" />
-
               <div className="flex-1">
                 <button
                   onClick={(e) => setPlayerPopup({ player: p, x: e.clientX, y: e.clientY })}
@@ -136,11 +137,7 @@ export default function App() {
       </div>
 
       {clubModal && (
-        <Modal
-          title={clubModal}
-          subtitle="Club Overview"
-          onClose={() => setClubModal(null)}
-        >
+        <Modal title={clubModal} subtitle="Club Overview" onClose={() => setClubModal(null)}>
           {players.filter(p => p.club === clubModal).map(p => (
             <div key={p.username} className="flex justify-between py-2 border-b border-neutral-700">
               <span>{p.username}</span>
@@ -154,11 +151,7 @@ export default function App() {
       )}
 
       {positionModal && (
-        <Modal
-          title={`${positionModal} Rankings`}
-          subtitle="Sorted by Overall Rating"
-          onClose={() => setPositionModal(null)}
-        >
+        <Modal title={`${positionModal} Rankings`} subtitle="Sorted by Overall Rating" onClose={() => setPositionModal(null)}>
           {rankedPlayers.filter(p => p.position === positionModal).map((p,i) => (
             <div key={p.username} className="flex justify-between py-2 border-b border-neutral-700">
               <span>#{i+1} {p.username}</span>
