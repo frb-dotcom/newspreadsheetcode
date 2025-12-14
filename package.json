@@ -1,1 +1,19 @@
+{
+  "name": "bf-spreadsheet",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "framer-motion": "^10.12.16"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "hi": "echo 'Hello! This is a dummy build command.'"
+  }
+}
 
